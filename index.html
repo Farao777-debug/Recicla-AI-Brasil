@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ReciclaBrasil — Encontre pontos de reciclagem, descarte correto de materiais e calcule seu impacto ecológico em todo o Brasil.">
+  <meta name="theme-color" content="#059669">
+  
+  <title>ReciclaBrasil — Pontos de Reciclagem pelo Brasil</title>
+
+  <!-- Folha de Estilos do Mapa Leaflet (CDN com Fallback Suave) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+
+  <!-- Folha de Estilos Customizada da Aplicação -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ========================================================================
+       Cabeçalho e Navegação Principal
+       ======================================================================== -->
+  <header class="header">
+    <div class="container header-content">
+      <!-- Logotipo Oficial da Plataforma -->
+      <a href="#inicio" class="logo" aria-label="Página Inicial do ReciclaBrasil">
+        <div class="logo-icon">♻️</div>
+        <span>ReciclaBrasil</span>
+      </a>
+
+      <!-- Menu de Navegação Superior -->
+      <nav aria-label="Navegação Principal">
+        <ul class="nav-links" id="nav-links">
+          <li><a href="#inicio" class="nav-link active">Início</a></li>
+          <li><a href="#mapa" class="nav-link">Mapa de Coleta</a></li>
+          <li><a href="#calculadora" class="nav-link">Impacto Ecológico</a></li>
+          <li><a href="#guia" class="nav-link">Guia de Descarte</a></li>
+        </ul>
+      </nav>
+
+      <!-- Ações do Cabeçalho (Botão de Cadastrar Ponto & Menu Mobile) -->
+      <div class="header-actions">
+        <button class="btn btn-primary btn-sm" onclick="abrirModalCadastro()" aria-label="Cadastrar novo ponto de reciclagem">
+          <span>➕</span> Cadastrar Ponto
+        </button>
+        <button class="menu-toggle" id="menu-toggle" aria-label="Alternar Menu">
+          ☰
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ======================================================================
+         Seção Hero (Apresentação e Métricas Gerais)
+         ====================================================================== -->
+    <section class="hero" id="inicio">
+      <div class="container">
+        <div class="hero-badge">
+          🌱 Plataforma Colaborativa de Sustentabilidade
+        </div>
+        
+        <h1 class="hero-title">
+          Encontre Pontos de Reciclagem <span>Pelo Brasil</span>
+        </h1>
+        
+        <p class="hero-subtitle">
+          Localize ecopontos, PEVs e cooperativas de reciclagem próximos de você. Descarte seus resíduos com responsabilidade e ajude a transformar o futuro do nosso planeta.
+        </p>
+
+        <!-- Métricas Dinâmicas em Destaque -->
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-number" id="stat-pontos">20+</span>
+            <span class="stat-label">Pontos Mapeados</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" id="stat-cidades">10+</span>
+            <span class="stat-label">Cidades Atendidas</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" id="stat-materiais">8</span>
+            <span class="stat-label">Tipos de Materiais</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">12.5k+</span>
+            <span class="stat-label">Kg Reciclados</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         Painel de Busca e Filtros Interativos
+         ====================================================================== -->
+    <section class="search-filter-section" id="filtros">
+      <div class="container">
+        <!-- Barra de Busca Textual e Seleção de Cidade -->
+        <div class="search-bar-wrap">
+          <div class="search-input-group">
+            <span class="search-icon">🔍</span>
+            <input type="text" 
+                   id="search-input" 
+                   class="search-input" 
+                   placeholder="Buscar por bairro, endereço ou nome do ecoponto..." 
+                   aria-label="Campo de busca">
+          </div>
+
+          <!-- Seletor de Cidades Populado Dinamicamente -->
+          <select id="city-select" class="city-select" aria-label="Filtrar por cidade">
+            <option value="todas">Todas as Cidades</option>
+          </select>
+
+          <!-- Alternador de Modos de Visualização (Mapa / Lista / Dividido) -->
+          <div class="view-mode-toggle" role="group" aria-label="Alternar exibição">
+            <button class="view-btn active" data-mode="split" title="Visualização Dividida">Dividido</button>
+            <button class="view-btn" data-mode="map" title="Apenas Mapa">Mapa</button>
+            <button class="view-btn" data-mode="list" title="Apenas Lista">Lista</button>
+          </div>
+        </div>
+
+        <!-- Chips de Seleção de Categoria de Material -->
+        <div class="category-chips" id="category-chips" role="tablist" aria-label="Filtrar por categoria de material">
+          <!-- Gerado via JavaScript (data.js / app.js) -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         Seção Principal: Mapa Interativo e Lista de Resultados
+         ====================================================================== -->
+    <section class="map-view-section" id="mapa">
+      <div class="container">
+        <div class="app-grid">
+          
+          <!-- Coluna 1: Mapa Interativo com Leaflet -->
+          <div class="map-card">
+            <div class="map-card-header">
+              <div class="map-card-title">
+                <span>🗺️</span> Mapa Georreferenciado
+              </div>
+              <span style="font-size: 0.85rem; color: var(--text-muted);">
+                Clique nos marcadores para detalhes
+              </span>
+            </div>
+
+            <!-- Banner exibido apenas caso o mapa esteja sem conexão ou offline -->
+            <div class="map-fallback-banner" id="map-fallback">
+              ℹ️ O mapa interativo requer conexão com a internet para carregar os mapas do OpenStreetMap. Todas as buscas, filtros e informações continuam disponíveis normalmente na lista ao lado!
+            </div>
+
+            <!-- Contêiner do Mapa -->
+            <div id="map"></div>
+          </div>
+
+          <!-- Coluna 2: Lista de Pontos de Coleta -->
+          <div class="points-list-pane">
+            <div class="points-header-bar">
+              <div class="points-counter">
+                Mostrando <span id="points-count">0</span> locais disponíveis
+              </div>
+            </div>
+
+            <!-- Contêiner de Cards Injetados Dinamicamente -->
+            <div id="points-list">
+              <!-- Gerado via JavaScript (app.js) -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         Calculadora de Impacto Ambiental
+         ====================================================================== -->
+    <section class="container" id="calculadora">
+      <div class="impact-section">
+        <div class="container">
+          <div class="impact-header">
+            <h2>Calculadora de Impacto Ambiental 🌍</h2>
+            <p>
+              Veja o impacto positivo imediato que a sua reciclagem gera no meio ambiente. Digite a quantidade aproximada de materiais reciclados no mês:
+            </p>
+          </div>
+
+          <div class="calculator-wrapper">
+            <!-- Entradas de Dados do Usuário -->
+            <div class="calc-inputs">
+              <div class="calc-field">
+                <label for="calc-papel">📄 Papel / Papelão (kg)</label>
+                <input type="number" id="calc-papel" class="calc-input" value="10" min="0" step="1">
+              </div>
+              <div class="calc-field">
+                <label for="calc-plastico">🧴 Plástico (kg)</label>
+                <input type="number" id="calc-plastico" class="calc-input" value="5" min="0" step="1">
+              </div>
+              <div class="calc-field">
+                <label for="calc-vidro">🍾 Vidro (kg)</label>
+                <input type="number" id="calc-vidro" class="calc-input" value="8" min="0" step="1">
+              </div>
+              <div class="calc-field">
+                <label for="calc-metal">🥫 Metal / Alumínio (kg)</label>
+                <input type="number" id="calc-metal" class="calc-input" value="3" min="0" step="1">
+              </div>
+            </div>
+
+            <!-- Resultados Calculados em Tempo Real -->
+            <div class="calc-results-grid">
+              <div class="result-box">
+                <div class="result-icon">💧</div>
+                <div class="result-value" id="res-agua">0 L</div>
+                <div class="result-label">Litros de Água Poupados</div>
+              </div>
+              <div class="result-box">
+                <div class="result-icon">🌲</div>
+                <div class="result-value" id="res-arvores">0 unid.</div>
+                <div class="result-label">Árvores Preservadas</div>
+              </div>
+              <div class="result-box">
+                <div class="result-icon">☁️</div>
+                <div class="result-value" id="res-co2">0 kg</div>
+                <div class="result-label">CO₂ Evitado na Atmosfera</div>
+              </div>
+              <div class="result-box">
+                <div class="result-icon">⚡</div>
+                <div class="result-value" id="res-energia">0 kWh</div>
+                <div class="result-label">Energia Elétrica Economizada</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         Guia de Separação de Resíduos (Resolução CONAMA)
+         ====================================================================== -->
+    <section class="guide-section" id="guia">
+      <div class="container">
+        <div class="section-title-wrap">
+          <h2 class="section-title">Guia Rápido de Separação e Coleta Seletiva</h2>
+          <p class="section-desc">Entenda o padrão brasileiro de cores e saiba o que pode ou não ser reciclado.</p>
+        </div>
+
+        <div class="guide-grid">
+          <!-- Card Azul: Papel -->
+          <article class="guide-card" style="border-top-color: #2563eb;">
+            <div class="guide-card-top">
+              <div class="guide-icon-box">📄</div>
+              <div>
+                <h3 class="guide-material-title">Papel e Papelão</h3>
+                <span class="guide-color-pill" style="background: #2563eb;">Lixeira Azul</span>
+              </div>
+            </div>
+            <ul class="guide-list">
+              <li>Caixas de papelão desmontadas</li>
+              <li>Folhas de caderno e impressões</li>
+              <li>Revistas, jornais e embalagens limpas</li>
+            </ul>
+            <ul class="guide-list donts">
+              <li>Papel higiênico ou guardanapo sujo</li>
+              <li>Papel carbono, vegetal ou térmico</li>
+            </ul>
+          </article>
+
+          <!-- Card Vermelho: Plástico -->
+          <article class="guide-card" style="border-top-color: #dc2626;">
+            <div class="guide-card-top">
+              <div class="guide-icon-box">🧴</div>
+              <div>
+                <h3 class="guide-material-title">Plásticos</h3>
+                <span class="guide-color-pill" style="background: #dc2626;">Lixeira Vermelha</span>
+              </div>
+            </div>
+            <ul class="guide-list">
+              <li>Garrafas PET e frascos de produtos</li>
+              <li>Tampas, potes e sacolas limpas</li>
+              <li>Canos PVC e embalagens rígidas</li>
+            </ul>
+            <ul class="guide-list donts">
+              <li>Cabos de panela e tomadas</li>
+              <li>Embalagens com restos orgânicos</li>
+            </ul>
+          </article>
+
+          <!-- Card Amarelo: Metal -->
+          <article class="guide-card" style="border-top-color: #ca8a04;">
+            <div class="guide-card-top">
+              <div class="guide-icon-box">🥫</div>
+              <div>
+                <h3 class="guide-material-title">Metais</h3>
+                <span class="guide-color-pill" style="background: #ca8a04;">Lixeira Amarela</span>
+              </div>
+            </div>
+            <ul class="guide-list">
+              <li>Latas de refrigerante e cerveja</li>
+              <li>Latas de conservas e tampinhas</li>
+              <li>Panelas velhas sem cabo e ferragens</li>
+            </ul>
+            <ul class="guide-list donts">
+              <li>Clipes, esponjas de aço e grampos</li>
+              <li>Pilhas e baterias (descarte especial)</li>
+            </ul>
+          </article>
+
+          <!-- Card Verde: Vidro -->
+          <article class="guide-card" style="border-top-color: #16a34a;">
+            <div class="guide-card-top">
+              <div class="guide-icon-box">🍾</div>
+              <div>
+                <h3 class="guide-material-title">Vidros</h3>
+                <span class="guide-color-pill" style="background: #16a34a;">Lixeira Verde</span>
+              </div>
+            </div>
+            <ul class="guide-list">
+              <li>Garrafas de bebidas e potes de molho</li>
+              <li>Frascos de perfumes e remédios</li>
+              <li>Copos de vidro (embalar se quebrados)</li>
+            </ul>
+            <ul class="guide-list donts">
+              <li>Espelhos, cerâmicas e pirex</li>
+              <li>Lâmpadas fluorescentes</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ========================================================================
+       Modal para Cadastro de Novo Ponto de Coleta
+       ======================================================================== -->
+  <div class="modal-overlay" id="modal-cadastro" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-title">Cadastrar Ponto de Coleta</h3>
+        <button class="modal-close-btn" onclick="fecharModalCadastro()" aria-label="Fechar janela">✖</button>
+      </div>
+
+      <form id="form-cadastro-ponto">
+        <div class="form-group">
+          <label for="input-nome">Nome do Local *</label>
+          <input type="text" id="input-nome" name="nome" class="form-control" placeholder="Ex: Ecoponto Central" required>
+        </div>
+
+        <div class="form-group">
+          <label for="input-endereco">Endereço Completo (com Bairro e Cidade/UF) *</label>
+          <input type="text" id="input-endereco" name="endereco" class="form-control" placeholder="Ex: Rua das Flores, 120 – Centro, Curitiba/PR" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="input-lat">Latitude *</label>
+            <input type="number" id="input-lat" name="lat" step="any" class="form-control" placeholder="Ex: -25.4284" required>
+          </div>
+          <div class="form-group">
+            <label for="input-lng">Longitude *</label>
+            <input type="number" id="input-lng" name="lng" step="any" class="form-control" placeholder="Ex: -49.2733" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="input-horario">Horário de Funcionamento</label>
+            <input type="text" id="input-horario" name="horario" class="form-control" placeholder="Ex: Seg–Sáb 8h–18h">
+          </div>
+          <div class="form-group">
+            <label for="input-telefone">Telefone para Contato</label>
+            <input type="text" id="input-telefone" name="telefone" class="form-control" placeholder="Ex: (41) 3300-0000">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Materiais Aceitos no Ponto *</label>
+          <div class="checkbox-materials-grid">
+            <label class="checkbox-chip">
+              <input type="checkbox" name="categorias" value="papel" checked> 📄 Papel
+            </label>
+            <label class="checkbox-chip">
+              <input type="checkbox" name="categorias" value="plastico" checked> 🧴 Plástico
+            </label>
+            <label class="checkbox-chip">
+              <input type="checkbox" name="categorias" value="metal" checked> 🥫 Metal
+            </label>
+            <label class="checkbox-chip">
+              <input type="checkbox" name="categorias" value="vidro" checked> 🍾 Vidro
+            </label>
+            <label class="checkbox-chip">
+              <input type="checkbox" name="categorias" value="eletronico"> 💻 Eletrônico
+            </label>
+            <label class="checkbox-chip">
+              <input type="checkbox" name="categorias" value="organico"> 🌿 Orgânico
+            </label>
+            <label class="checkbox-chip">
+              <input type="checkbox" name="categorias" value="oleo"> 🛢️ Óleo
+            </label>
+            <label class="checkbox-chip">
+              <input type="checkbox" name="categorias" value="pilhas"> 🔋 Pilhas
+            </label>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-outline" onclick="fecharModalCadastro()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Ponto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Contêiner Flutuante de Toasts de Notificação -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- ========================================================================
+       Rodapé da Aplicação
+       ======================================================================== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="logo" style="color: white;">
+            <div class="logo-icon">♻️</div>
+            <span>ReciclaBrasil</span>
+          </div>
+          <p>
+            Plataforma digital dedicada a democratizar o acesso à reciclagem e à gestão sustentável de resíduos em todas as regiões do Brasil.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Navegação</h4>
+          <ul>
+            <li><a href="#inicio">Início</a></li>
+            <li><a href="#mapa">Mapa de Coleta</a></li>
+            <li><a href="#calculadora">Calculadora</a></li>
+            <li><a href="#guia">Guia CONAMA</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Reciclagem</h4>
+          <ul>
+            <li><a href="#guia">Separação Correta</a></li>
+            <li><a href="#guia">Cores Oficiais</a></li>
+            <li><a href="#calculadora">Metodologia de Impacto</a></li>
+            <li><a href="javascript:void(0)" onclick="abrirModalCadastro()">Cadastrar Ecoponto</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Contato & Apoio</h4>
+          <ul>
+            <li><a href="mailto:contato@reciclabrasil.org">contato@reciclabrasil.org</a></li>
+            <li><a href="https://cempre.org.br" target="_blank" rel="noopener">CEMPRE Brasil ↗</a></li>
+            <li><a href="https://sinir.gov.br" target="_blank" rel="noopener">SINIR / MMA ↗</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2026 ReciclaBrasil. Desenvolvido para rodar localmente com código limpo, sem erros e 100% responsivo.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Biblioteca do Mapa Leaflet (com integridade e crossorigin) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Dados da Aplicação -->
+  <script src="js/data.js"></script>
+
+  <!-- Script Principal da Aplicação -->
+  <script src="js/app.js"></script>
+</body>
+</html>
