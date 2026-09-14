@@ -16,7 +16,7 @@ Você pode rodar esta aplicação de duas formas simples:
 ### Opção 2: Servidor Local Rápido com Python
 No terminal, execute:
 ```bash
-cd "C:\Users\777\.gemini\antigravity\scratch\reciclabrasil"
+procure o diretório local do arquivo na sua maquina e rode o comando abaixo
 python -m http.server 8000
 ```
 Depois acesse no seu navegador: **`http://localhost:8000`**
