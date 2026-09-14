@@ -10,7 +10,7 @@ Você pode rodar esta aplicação de duas formas simples:
 
 ### Opção 1: Abrir diretamente no navegador (Sem servidor)
 1. Navegue até a pasta do projeto:
-   `C:\Users\777\.gemini\antigravity\scratch\reciclabrasil`
+   
 2. Dê um duplo clique no arquivo **`index.html`** (ou abra com Google Chrome, Microsoft Edge, Firefox).
 
 ### Opção 2: Servidor Local Rápido com Python
